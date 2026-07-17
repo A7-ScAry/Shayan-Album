@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shayan's Album</title>
+    <style>
+        /* Minimalist, formal styling inspired by VSCO */
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #1a1a1a;
+            --secondary-text: #767676;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        header {
+            margin-top: 60px;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 500;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin: 0;
+        }
+
+        /* Folder Navigation Grid */
+        #folder-view {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            width: 100%;
+            max-width: 800px;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .folder-link {
+            padding: 30px 20px;
+            text-align: center;
+            border: 1px solid #eaeaea;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-color);
+            background: transparent;
+        }
+
+        .folder-link:hover {
+            border-color: var(--text-color);
+        }
+
+        /* Gallery View */
+        #gallery-view {
+            display: none;
+            width: 100%;
+            max-width: 1200px;
+            padding: 20px;
+            box-sizing: border-box;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .gallery-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 40px;
+        }
+
+        .gallery-title {
+            font-size: 18px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            color: var(--secondary-text);
+            padding: 0;
+        }
+
+        .back-btn:hover {
+            color: var(--text-color);
+        }
+
+        /* VSCO-style Photo Grid */
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+            width: 100%;
+        }
+
+        .photo-item {
+            width: 100%;
+            aspect-ratio: 4 / 5; /* Classic portrait ratio */
+            object-fit: cover;
+            background-color: #f4f4f4; /* Placeholder color while loading */
+        }
+
+        /* Loading state */
+        #loading {
+            display: none;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--secondary-text);
+            margin-top: 50px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Shayan's Album</h1>
+    </header>
+
+    <!-- Folder Selection View -->
+    <div id="folder-view">
+        <div class="folder-link" onclick="openGallery('shayan')">Shayan</div>
+        <div class="folder-link" onclick="openGallery('father')">Father</div>
+        <div class="folder-link" onclick="openGallery('mother')">Mother</div>
+        <div class="folder-link" onclick="openGallery('grandfather')">Grandfather</div>
+        <div class="folder-link" onclick="openGallery('grandmother')">Grandmother</div>
+        <div class="folder-link" onclick="openGallery('aunt')">Aunt</div>
+        <div class="folder-link" onclick="openGallery('uncle')">Uncle</div>
+    </div>
+
+    <!-- Photo Gallery View -->
+    <div id="gallery-view">
+        <div class="gallery-header">
+            <button class="back-btn" onclick="showFolders()">← Back to Folders</button>
+            <div class="gallery-title" id="current-folder-title">Album</div>
+            <div style="width: 100px;"></div> <!-- Spacer for flex alignment -->
+        </div>
+        
+        <div id="loading">Loading photos...</div>
+        <div class="photo-grid" id="photo-grid"></div>
+    </div>
+
+    <script>
+        // Your Cloudinary Cloud Name
+        const cloudName = 'ejncgqqv';
+
+        function openGallery(folderTag) {
+            // UI Transitions
+            document.getElementById('folder-view').style.display = 'none';
+            document.getElementById('gallery-view').style.display = 'flex';
+            document.getElementById('current-folder-title').innerText = folderTag;
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('photo-grid').innerHTML = '';
+
+            // Fetching images using Cloudinary Client-Side Resource Lists (Tags)
+            // Note: The images in Cloudinary MUST be tagged with the folder name (e.g., 'father', 'shayan')
+            const listUrl = `https://res.cloudinary.com/${cloudName}/image/list/${folderTag.toLowerCase()}.json`;
+
+            fetch(listUrl)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Could not load images. Ensure Resource List is enabled and images are tagged.');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    document.getElementById('loading').style.display = 'none';
+                    const grid = document.getElementById('photo-grid');
+                    
+                    if (data.resources && data.resources.length > 0) {
+                        data.resources.forEach(image => {
+                            // Construct the image URL. Using 'q_auto,f_auto' for optimized loading
+                            const imgUrl = `https://res.cloudinary.com/${cloudName}/image/upload/q_auto,f_auto/${image.public_id}.${image.format}`;
+                            
+                            const imgElement = document.createElement('img');
+                            imgElement.src = imgUrl;
+                            imgElement.className = 'photo-item';
+                            imgElement.alt = `Photo from ${folderTag}`;
+                            
+                            grid.appendChild(imgElement);
+                        });
+                    } else {
+                        grid.innerHTML = '<p style="color: #767676; font-size: 12px; letter-spacing: 1px; grid-column: 1/-1; text-align: center;">No photos found in this album.</p>';
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('photo-grid').innerHTML = 
+                        '<p style="color: #767676; font-size: 12px; grid-column: 1/-1; text-align: center;">Error loading album. Please check your Cloudinary security settings and tags.</p>';
+                    console.error('Error fetching images:', error);
+                });
+        }
+
+        function showFolders() {
+            document.getElementById('gallery-view').style.display = 'none';
+            document.getElementById('folder-view').style.display = 'grid';
+        }
+    </script>
+</body>
+</html>
