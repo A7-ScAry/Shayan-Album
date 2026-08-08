@@ -117,9 +117,17 @@
         /* VSCO-style Photo Grid */
         .photo-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            /* Default mobile view: 2 columns */
+            grid-template-columns: repeat(2, 1fr);
             gap: 15px;
             width: 100%;
+        }
+
+        /* Desktop/Tablet view: More columns */
+        @media (min-width: 768px) {
+            .photo-grid {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            }
         }
 
         .photo-item {
@@ -156,6 +164,7 @@
         <div class="folder-link" onclick="openGallery('grandmother')">Grandmother</div>
         <div class="folder-link" onclick="openGallery('aunt')">Aunt</div>
         <div class="folder-link" onclick="openGallery('uncle')">Uncle</div>
+        <div class="folder-link" onclick="openGallery('multi_members')">Multi Members</div>
     </div>
 
     <!-- Photo Gallery View -->
@@ -178,12 +187,16 @@
             // UI Transitions
             document.getElementById('folder-view').style.display = 'none';
             document.getElementById('gallery-view').style.display = 'flex';
-            document.getElementById('current-folder-title').innerText = folderTag;
+            
+            // Format the title to remove underscores for display (e.g. 'multi_members' -> 'multi members')
+            const displayTitle = folderTag.replace('_', ' ');
+            document.getElementById('current-folder-title').innerText = displayTitle;
+            
             document.getElementById('loading').style.display = 'block';
             document.getElementById('photo-grid').innerHTML = '';
 
             // Fetching images using Cloudinary Client-Side Resource Lists (Tags)
-            // Note: The images in Cloudinary MUST be tagged with the folder name (e.g., 'father', 'shayan')
+            // Note: The images in Cloudinary MUST be tagged with the folder name (e.g., 'multi_members')
             const listUrl = `https://res.cloudinary.com/${cloudName}/image/list/${folderTag.toLowerCase()}.json`;
 
             fetch(listUrl)
@@ -205,7 +218,7 @@
                             const imgElement = document.createElement('img');
                             imgElement.src = imgUrl;
                             imgElement.className = 'photo-item';
-                            imgElement.alt = `Photo from ${folderTag}`;
+                            imgElement.alt = `Photo from ${displayTitle}`;
                             
                             grid.appendChild(imgElement);
                         });
